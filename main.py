@@ -23,5 +23,13 @@ CORS(app)
 def greet():
     return "Hello, world!"
 
+@app.get("/whatsapp")
+def verify_token():
+    token = request.args.get("hub.verify_token")
+    challenge = request.args.get("hub.challenge")
+    if token == ACCESS_TOKEN:
+        return challenge, 200
+    return jsonify({"error": "Invalid token"}), 400
+
 if __name__ == "__main__":
     app.run(debug=True, host='0.0.0.0', port=5000)
