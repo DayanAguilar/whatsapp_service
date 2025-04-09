@@ -88,22 +88,33 @@ def verify_token(
 @app.post("/whatsapp")
 async def mensaje_recibido(request: Request):
     try:
-        print(request)
+        body = await request.body()
+        print("Raw body:", body.decode()) 
+
         cuerpo = await request.json()
-        entrada = cuerpo["entry"][0]
-        cambios = entrada["changes"][0]
-        valor = cambios["value"]
+        entrada = cuerpo.get("entry", [])[0]
+        cambios = entrada.get("changes", [])[0]
+        valor = cambios.get("value", {})
+
+        if "messages" not in valor or not valor["messages"]:
+            print("No hay mensajes en la entrada.")
+            return JSONResponse(content={"status": "sin mensaje"}, status_code=200)
+
         mensaje = valor["messages"][0]
         texto = mensaje["text"]
         pregunta_usuario = texto["body"]
         numero = mensaje["from"]
         cuerpo_respuesta = crear_mensaje(pregunta_usuario, numero)
         estado_envio = enviar_whatsapp(cuerpo_respuesta, numero)
+
         if not estado_envio:
             return JSONResponse(content={"status": "no enviado"}, status_code=400)
+
         return JSONResponse(content={"status": "success"}, status_code=200)
+
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
 
 def enviar_whatsapp(cuerpo: dict, numero: str):
     try:
