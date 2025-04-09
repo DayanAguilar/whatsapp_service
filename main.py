@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Query, HTTPException, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, PlainTextResponse  # Asegúrate de importar PlainTextResponse
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 import requests
