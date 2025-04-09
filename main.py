@@ -88,6 +88,7 @@ def verify_token(
 @app.post("/whatsapp")
 async def mensaje_recibido(request: Request):
     try:
+        print(request)
         cuerpo = await request.json()
         entrada = cuerpo["entry"][0]
         cambios = entrada["changes"][0]
