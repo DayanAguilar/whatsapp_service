@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Query, HTTPException, Request
-from fastapi.responses import PlainTextResponse, JSONResponse
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 import requests
@@ -33,7 +33,7 @@ conn = psycopg2.connect(
 def guardar_estado_chatbot(numero: str):
     cursor = conn.cursor()
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    cursor.execute('''
+    cursor.execute(''' 
         INSERT INTO whatsapp (numero, estado, fecha_hora)
         VALUES (%s, %s, %s)
     ''', (numero, True, now))
@@ -44,8 +44,8 @@ def desactivar_registros_viejos():
     cursor = conn.cursor()
     limite = datetime.now() - timedelta(minutes=30)
     limite_str = limite.strftime("%Y-%m-%d %H:%M:%S")
-    cursor.execute('''
-        DELETE FROM whatsapp
+    cursor.execute(''' 
+        DELETE FROM whatsapp 
         WHERE estado = TRUE AND fecha_hora < %s
     ''', (limite_str,))
     conn.commit()
@@ -89,15 +89,12 @@ def verify_token(
 async def mensaje_recibido(request: Request):
     try:
         body = await request.body()
-        print("Raw body:", body.decode()) 
-
         cuerpo = await request.json()
         entrada = cuerpo.get("entry", [])[0]
         cambios = entrada.get("changes", [])[0]
         valor = cambios.get("value", {})
 
         if "messages" not in valor or not valor["messages"]:
-            print("No hay mensajes en la entrada.")
             return JSONResponse(content={"status": "sin mensaje"}, status_code=200)
 
         mensaje = valor["messages"][0]
@@ -108,26 +105,25 @@ async def mensaje_recibido(request: Request):
         estado_envio = enviar_whatsapp(cuerpo_respuesta, numero)
 
         if not estado_envio:
-            return JSONResponse(content={"status": "no enviado"}, status_code=400)
+            return JSONResponse(content={"status": "no enviado"}, status_code=200)
 
         return JSONResponse(content={"status": "success"}, status_code=200)
 
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
+        return JSONResponse(content={"status": "error", "detail": str(e)}, status_code=200)
 
 def enviar_whatsapp(cuerpo: dict, numero: str):
     try:
         cursor = conn.cursor()
-        cursor.execute('''
-            SELECT estado FROM whatsapp
+        cursor.execute(''' 
+            SELECT estado FROM whatsapp 
             WHERE numero = %s
-            ORDER BY fecha_hora DESC
+            ORDER BY fecha_hora DESC 
             LIMIT 1
         ''', (numero,))
         resultado = cursor.fetchone()
         cursor.close()
-        print(resultado)
+
         if resultado is None or not resultado[0]:
             return False
 
@@ -160,10 +156,10 @@ def crear_mensaje(texto: str, numero: str) -> dict:
         }
 
     cursor = conn.cursor()
-    cursor.execute('''
-        SELECT estado FROM whatsapp
+    cursor.execute(''' 
+        SELECT estado FROM whatsapp 
         WHERE numero = %s
-        ORDER BY fecha_hora DESC
+        ORDER BY fecha_hora DESC 
         LIMIT 1
     ''', (numero,))
     resultado = cursor.fetchone()
@@ -202,7 +198,6 @@ def crear_mensaje(texto: str, numero: str) -> dict:
         "type": "text",
         "text": {"body": respuesta_chatbot},
     }
-
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
